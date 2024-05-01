@@ -9,7 +9,7 @@ pipeline AirportPipeline {
 
     // 3. Syntax of a pipe
     // connecting the block AiportExtractor
-    // with the block CarsTextFileInterpreter
+    // with the block AirportTextFileInterpreter
 AirportExtractor -> AirportTextFileInterpreter;
 // 4. The output of the preceding block is hereby used 
     // as input for the succeeding block.
