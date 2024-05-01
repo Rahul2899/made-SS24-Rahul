@@ -58,7 +58,7 @@ AirportExtractor -> AirportTextFileInterpreter;
             "IATA" oftype text,
             "ICAO" oftype text,
             "Latitude" oftype decimal,
-            "Longtitude" oftype decimal,
+            "Longitude" oftype decimal,
             "Altitude" oftype decimal,
             "Zeitzone" oftype decimal,
             "DST" oftype text,
