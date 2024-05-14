@@ -1,0 +1,81 @@
+// 1. This Jayvee model describes a pipeline 
+// from a CSV file in the web 
+// to a SQLite file with constraints on the data as mentioned in exercise slide.
+
+pipeline TreesPipeline {
+    // See here for meta-data of the data source
+    // https://opendata.rhein-kreis-neuss.de/api/v2/catalog/datasets/stadt-neuss-herbstpflanzung-2023/exports/csv
+
+    // 2. We define the pipeline structure by referencing the blocks used.
+    TreesHttpExtractor
+        -> TreesTextFileInterpreter
+        -> TreesCSVInterpreter
+        -> TreesColumnDeleter;
+
+    TreesColumnDeleter
+        -> TreesTableInterpreter
+        -> TreesSQLiteLoader;
+
+    // 3. After the pipeline structure, we define the blocks used.
+    block TreesHttpExtractor oftype HttpExtractor {
+        url: "https://opendata.rhein-kreis-neuss.de/api/v2/catalog/datasets/stadt-neuss-herbstpflanzung-2023/exports/csv";
+    }
+
+    block TreesTextFileInterpreter oftype TextFileInterpreter { }
+
+    block TreesCSVInterpreter oftype CSVInterpreter { 
+        delimiter: ";";
+    }
+
+    block TreesTableInterpreter oftype TableInterpreter {
+        header: true;
+        columns: [
+
+            // 4.Here we are using the column names from the CSV file
+            // to define the schema of the SQLite table.
+            // The types of the columns are inferred from the data.
+
+            "lfd_nr" oftype integer,
+            "stadtteil" oftype ValidCity,
+            "standort" oftype text,
+            "baumart_botanisch" oftype text,
+            "baumart_deutsch" oftype text,
+            "id" oftype ValidIds,
+            "baumfamilie" oftype text,
+        ];
+    }
+
+    // 4. We delete the column E from the table as it is not required.
+    block TreesColumnDeleter oftype ColumnDeleter {
+        delete: [column E];
+    }
+
+    block TreesSQLiteLoader oftype SQLiteLoader {
+        table: "trees";
+        file: "./trees.sqlite";
+    }
+
+}
+// 5. We define constraints on the stadtteil to ensure it is valid according to the schema.
+valuetype ValidCity oftype text {
+    constraints: [
+        OnlyCityList,
+    ];
+}
+// 6. We define constraints on the coordinates to ensure it is valid according to the schema.
+valuetype ValidIds oftype text {
+    constraints: [
+        OnlyValidIds,
+    ];
+}
+
+
+
+// 7. This constraint ensures that the stadtteil is one of the valid values.For e.g, Furth-Mitte, Furth-Süd, Furth-Nord.
+constraint OnlyCityList on text:
+    value in ["Furth-Mitte","Furth-Süd","Furth-Nord"];
+
+
+// 8. This constraint ensures that the coordinates are in the format of "x.x, y.y".
+constraint OnlyValidIds on text:
+    value matches /^\d{1,3}\.\d+, \d{1,3}\.\d+$/;
