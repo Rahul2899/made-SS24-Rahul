@@ -1,34 +1,35 @@
 # Project Plan
 
-## Fuel consumption in transport.
+## Climate Change: Factors Affecting Temperature and Rainfall in Crop Production.
 <!-- Give your project a short title. -->
 
 
 ## Main Question
 
 <!-- Think about one main question you want to answer based on the data. -->
-How does fuel consumption in transport contribute to climate change, and what are some strategies to reduce its impact?
-
+How does climate change, particularly changes in temperature, affect rainfall patterns and crop yields? 
 ## Description
 
 <!-- Describe your data science project in max. 200 words. Consider writing about why and how you attempt it. -->
-The amount of fuels consumed and the type of fuels indicate the energy consumption in transport and the air and climate burden caused by transport. Created from the underlying data of the Czech Statistical Office.
-
+This project investigates how rising temperatures caused by climate change impact rainfall patterns and crop yields. It analyzes the complex relationship between temperature, precipitation, and crop growth to develop sustainable agricultural practices and adaptation strategies for a changing climate.
 ## Datasources
 
 <!-- Describe each datasources you plan to use in a section. Use the prefic "DatasourceX" where X is the id of the datasource. -->
 
-### Datasource1: European data
+### Datasources
 
-* Data URL: https://raw.githubusercontent.com/od-ms/radverkehr-zaehlstellen/main/100035541/2019-01.csv](https://data.europa.eu/data/datasets/https-lkod-mzp-cz-output-lkod-envirometr-cenia-indikator-spotreba-paliv-v-doprave-jsonld?locale=en
+* Data URL: "https://www.kaggle.com/datasets/thedevastator/the-relationship-between-crop-production-and-cli"
+* Data URL: "https://www.kaggle.com/datasets/swapnilbhange/average-temperature-of-cities"
 * Data Type: CSV
 
-The portal is a central point of access to European open data from international, European Union, national, regional, local and geodata portals. It consolidates the former EU Open Data Portal and the European Data Portal.
+
 
 ## Work Packages
 
 <!-- List of work packages ordered sequentially, each pointing to an issue with more details. -->
 
 1.Exploratory Data Analysis
+2.Interpolation 
+3.Data Cleaning & Processing
+4.Outlier Detection
 
-[i1]: https://github.com/jvalue/made-template/issues/1
