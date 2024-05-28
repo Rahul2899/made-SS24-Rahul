@@ -1,86 +1,89 @@
-// Exercise 3: Automated Data Pipeline for Train Goods Transportation
+pipeline GoodsTransportedByTrainPipeline {
+    // Direct link to the CSV file
+    GoodsHttpExtractor
+        -> GoodsTextFileInterpreter
+        -> GoodsCSVInterpreter
+        -> GoodsMetadataRemover
+        -> GoodsColumnSelector
+        -> GoodsHeaderRenamer
+        -> GoodsValidator
+        -> GoodsSQLiteLoader;
 
-pipeline TransportPipeline {
-
-    // 1. Extract data from the CSV file directly
-    CsvHttpExtractor
-        -> CsvSkipHeaderLinesInterpreter
-        -> CsvColumnSelector
-        -> ColumnRenamer
-        -> DataCleaningInterpreter
-        -> SQLiteLoader;
-
-    block CsvHttpExtractor oftype HttpExtractor {
+    // Define the blocks used in the pipeline.
+    block GoodsHttpExtractor oftype HttpExtractor {
         url: "https://www-genesis.destatis.de/genesis/downloads/00/tables/46131-0014_00.csv";
     }
 
-    block CsvSkipHeaderLinesInterpreter oftype CsvInterpreter {
-        delimiter: ";";
-        header: true;
-        skip_header_lines: 8; // Skip the initial 8 lines of metadata
-        skip_footer_lines: 3; // Skip the last 3 lines of copyright notice
-    }
-    
-    //2. Selects the relevant columns as per the problem statement.
-    block CsvColumnSelector oftype ColumnSelector {
-        columns: [
-            column A,
-            column B,
-            column C,
-            column D,
-            column E,
-            column AT,
-            column AU,
-        ];
+    block GoodsTextFileInterpreter oftype TextFileInterpreter {
+        encoding: "UTF-8"; // Ensure German umlauts are correctly interpreted
     }
 
-    //3. Renames the columns as per the problem statement.
-    block ColumnRenamer oftype ColumnRenamer {
+    block GoodsCSVInterpreter oftype CSVInterpreter {
+        delimiter: ";";
+    }
+
+    // Remove metadata rows (initial description and headers, and footer copyright notice)
+    block GoodsMetadataRemover oftype MetadataRemover {
+        start_row: 9;
+        end_row: -1; // Assuming the copyright notice is in the last row
+    }
+
+    // Select only specific columns: A-E and AT-AU
+    block GoodsColumnSelector oftype ColumnSelector {
+        keep: ["A", "B", "C", "D", "E", "AT", "AU"];
+    }
+
+    // Rename headers for columns A-E and AT-AU
+    block GoodsHeaderRenamer oftype HeaderRenamer {
         rename: {
-            A: "year",
-            B: "month",
-            C: "goods_id",
-            D: "goods_name",
-            E: "goods_source",
-            AT: "abroad",
-            AU: "total"
+            "A": "year",
+            "B": "month",
+            "C": "goods_id",
+            "D": "goods_name",
+            "E": "goods_source",
+            "AT": "abroad",
+            "AU": "total"
         };
     }
 
-    //4. Data Cleaning and Validation Block
-    block DataCleaningInterpreter oftype TableInterpreter {
-        columns: [
-            "year"    oftype PositiveInteger,
-            "month"   oftype GermanMonth,
-            "goods_id" oftype GoodsId,
-            "goods_name" oftype text,
-            "goods_source" oftype text,
-            "abroad"    oftype PositiveInteger,
-            "total"     oftype PositiveInteger
+    // Validate the data
+    block GoodsValidator oftype DataValidator {
+        rules: [
+            // Numeric values must be positive integers
+            { column: "year", type: integer, constraints: [Positive] },
+            { column: "month", type: ValidMonth },
+            { column: "goods_id", type: ValidGoodsID },
+            { column: "abroad", type: integer, constraints: [Positive] },
+            { column: "total", type: integer, constraints: [Positive] }
         ];
-        // Drop rows with invalid or missing values in any column
-        drop_if_invalid: true;
     }
 
-    block SQLiteLoader oftype SQLiteLoader {
-        file: "./goodsTransportedByTrain.sqlite";
+    block GoodsSQLiteLoader oftype SQLiteLoader {
         table: "goods";
+        file: "./goodsTransportedByTrain.sqlite";
     }
+}
 
-    //Custom valuetypes for better data integrity
-    valuetype PositiveInteger oftype integer {
-        constraints: [is_positive];
-    }
-   
-    valuetype GermanMonth oftype text {
-        constraints: [
-            matches_regex:  "^(Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember)$"
-        ];
-    }
-   
-    valuetype GoodsId oftype text {
-        constraints: [
-            matches_regex: "^NST7-[0-9A-Z]{3}$"
-        ];
-    }
+// Define custom value types and constraints
+valuetype ValidMonth oftype text {
+    constraints: [OnlyGermanMonths];
+}
+
+valuetype ValidGoodsID oftype text {
+    constraints: [OnlyValidGoodsID];
+}
+
+// Constraint for German months
+constraint OnlyGermanMonths on text {
+    value in ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+}
+
+// Constraint for valid goods ID
+constraint OnlyValidGoodsID on text {
+    value matches /^NST7-[A-Z0-9]{3}$/;
+}
+
+// Positive integer constraint
+constraint Positive on integer {
+    value > 0;
 }
