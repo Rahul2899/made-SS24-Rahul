@@ -25,7 +25,6 @@ pipeline GoodsTransportedByTrainPipeline {
     // Remove metadata rows (initial description and headers, and footer copyright notice)
     block GoodsMetadataRemover oftype MetadataRemover {
         start_row: 9;
-        end_row: -1; // Assuming the copyright notice is in the last row
     }
 
     // Select only specific columns: A-E and AT-AU
@@ -60,7 +59,7 @@ pipeline GoodsTransportedByTrainPipeline {
 
     block GoodsSQLiteLoader oftype SQLiteLoader {
         table: "goods";
-        file: "./goodsTransportedByTrain.sqlite";
+        file: "goodsTransportedByTrain.sqlite"; // Ensure the correct path
     }
 }
 
