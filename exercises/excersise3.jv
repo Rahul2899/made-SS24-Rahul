@@ -9,7 +9,7 @@ pipeline GoodsTransportPipeline {
     }
 
     block PipelineTextRangeSelector oftype TextRangeSelector {
-        lineFrom: 9;
+        lineFrom: 8;
         lineTo: 41336;
     }
 
@@ -28,17 +28,17 @@ pipeline GoodsTransportPipeline {
     }
 
     block ColRenameE oftype CellWriter {
-        at: cell E8;
+        at: cell E1;
         write: ["goods_source"];
     }
 
      block ColRenameAT_AU oftype CellWriter {
-        at: cell F8;
+        at: cell F1;
         write: ["abroad"];
     }
 
     block ColRenameG oftype CellWriter {
-        at: cell G8;
+        at: cell G1;
         write: ["total"];
     }
 
