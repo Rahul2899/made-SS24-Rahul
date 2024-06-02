@@ -1,88 +1,93 @@
-pipeline GoodsTransportedByTrainPipeline {
-    // Direct link to the CSV file
-    GoodsHttpExtractor
-        -> GoodsTextFileInterpreter
-        -> GoodsCSVInterpreter
-        -> GoodsMetadataRemover
-        -> GoodsColumnSelector
-        -> GoodsHeaderRenamer
-        -> GoodsValidator
-        -> GoodsSQLiteLoader;
+pipeline GoodsTransportPipeline {
 
-    // Define the blocks used in the pipeline.
-    block GoodsHttpExtractor oftype HttpExtractor {
+     block PipelineFileExtractor oftype HttpExtractor {
         url: "https://www-genesis.destatis.de/genesis/downloads/00/tables/46131-0014_00.csv";
     }
 
-    block GoodsTextFileInterpreter oftype TextFileInterpreter {
-        encoding: "UTF-8"; // Ensure German umlauts are correctly interpreted
+    block PipelineTextFileInterpreter oftype TextFileInterpreter {
+        encoding: "latin6";
     }
 
-    block GoodsCSVInterpreter oftype CSVInterpreter {
+    block PipelineTextRangeSelector oftype TextRangeSelector {
+        lineFrom: 9;
+        lineTo: 41336;
+    }
+
+    block PipelineCSVInterpreter oftype CSVInterpreter {
         delimiter: ";";
     }
 
-    // Remove metadata rows (initial description and headers, and footer copyright notice)
-    block GoodsMetadataRemover oftype MetadataRemover {
-        start_row: 9;
+    block ColRenameA_E oftype CellWriter {
+        at: range A1:C1;
+        write: ["year", "month", "goods_id"];
     }
 
-    // Select only specific columns: A-E and AT-AU
-    block GoodsColumnSelector oftype ColumnSelector {
-        keep: ["A", "B", "C", "D", "E", "AT", "AU"];
+    block ColRenameD oftype CellWriter {
+        at: cell D1;
+        write: ["goods_name"];
     }
 
-    // Rename headers for columns A-E and AT-AU
-    block GoodsHeaderRenamer oftype HeaderRenamer {
-        rename: {
-            "A": "year",
-            "B": "month",
-            "C": "goods_id",
-            "D": "goods_name",
-            "E": "goods_source",
-            "AT": "abroad",
-            "AU": "total"
-        };
+    block ColRenameE oftype CellWriter {
+        at: cell E8;
+        write: ["goods_source"];
     }
 
-    // Validate the data
-    block GoodsValidator oftype DataValidator {
-        rules: [
-            // Numeric values must be positive integers
-            { column: "year", type: integer, constraints: [Positive] },
-            { column: "month", type: ValidMonth },
-            { column: "goods_id", type: ValidGoodsID },
-            { column: "abroad", type: integer, constraints: [Positive] },
-            { column: "total", type: integer, constraints: [Positive] }
+     block ColRenameAT_AU oftype CellWriter {
+        at: cell F8;
+        write: ["abroad"];
+    }
+
+    block ColRenameG oftype CellWriter {
+        at: cell G8;
+        write: ["total"];
+    }
+
+     constraint FiveCharForIdentificationNumber oftype LengthConstraint {
+        minLength: 5;
+        maxLength: 5;
+    }
+
+    valuetype CommunityIdentificationNumber oftype text {
+        constraints: [FiveCharForIdentificationNumber];
+    }
+
+    constraint positiveNumber oftype RangeConstraint {
+        lowerBound: 0;
+        lowerBoundInclusive: false;
+    }
+
+    valuetype PositiveInteger oftype integer {
+        constraints: [positiveNumber];
+    }
+
+    block PipelineTableInterpreter oftype TableInterpreter {
+        header: true;
+        columns: [
+            "year" oftype integer,
+            "month" oftype text,
+            "goods_id" oftype text,
+            "goods_source" oftype text,
+            "goods_name" oftype text,
+            "abroad" oftype text,
+            "total" oftype text,
+        
         ];
     }
 
-    block GoodsSQLiteLoader oftype SQLiteLoader {
+    block PipelineLoader oftype SQLiteLoader {
         table: "goods";
-        file: "goodsTransportedByTrain.sqlite"; // Ensure the correct path
+        file: "./goodsTransportByTrain.sqlite";
     }
-}
 
-// Define custom value types and constraints
-valuetype ValidMonth oftype text {
-    constraints: [OnlyGermanMonths];
-}
-
-valuetype ValidGoodsID oftype text {
-    constraints: [OnlyValidGoodsID];
-}
-
-// Constraint for German months
-constraint OnlyGermanMonths on text {
-    value in ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
-}
-
-// Constraint for valid goods ID
-constraint OnlyValidGoodsID on text {
-    value matches /^NST7-[A-Z0-9]{3}$/;
-}
-
-// Positive integer constraint
-constraint Positive on integer {
-    value > 0;
+    PipelineFileExtractor
+        ->PipelineTextFileInterpreter
+        ->PipelineTextRangeSelector
+        ->PipelineCSVInterpreter
+        ->ColRenameA_E
+        ->ColRenameD
+        ->ColRenameE
+        ->ColRenameAT_AU
+        ->ColRenameG
+        ->PipelineTableInterpreter
+        ->PipelineLoader;
 }
