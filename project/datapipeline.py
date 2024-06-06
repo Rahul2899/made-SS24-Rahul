@@ -6,7 +6,7 @@ import kaggle
 import time
 
 dataset_links = ["https://www.kaggle.com/datasets/thedevastator/the-relationship-between-crop-production-and-cli",
-                 "https://www.kaggle.com/datasets/swapnilbhange/average-temperature-of-cities",
+                 "https://www.kaggle.com/datasets/varshitanalluri/crop-recommendation-dataset",
                  ]
 
 for dataset in dataset_links:
