@@ -1,0 +1,121 @@
+Here's the code with added comments for better understanding:
+
+```plaintext
+// Define a data processing pipeline named 'Tree'
+pipeline Tree {
+
+    // Define the sequence of operations in the pipeline
+    DataExtractor                             // Extracts data from a specified URL
+    -> CsvFilePicker                          // Picks the CSV file from the specified path
+    -> AirportsTextFileInterpreter            // Interprets the text file format
+    -> AirportsCSVInterpreter                 // Interprets the CSV file with specified delimiter
+    -> WriteHeader                            // Writes a header row to the output table
+    -> WrriteHeaderBat                        // Writes a header for battery temperature column
+    -> AirportsTableInterpreter               // Interprets the table structure with specified columns
+    -> CelsiusToFahrenheitTransformerTemp     // Transforms temperature from Celsius to Fahrenheit
+    -> CelsiusToFahrenheitTransformerBat      // Transforms battery temperature from Celsius to Fahrenheit
+    -> DatabaseLoader;                        // Loads the final data into a SQLite database
+
+    // Block to extract data from a URL
+    block DataExtractor oftype GTFSExtractor { 
+        url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip"; 
+    }
+
+    // Block to pick a CSV file from a specified path
+    block CsvFilePicker oftype FilePicker {
+        path: "/data.csv";
+    }
+
+    // Block to interpret text file format
+    block AirportsTextFileInterpreter oftype TextFileInterpreter {}
+
+    // Block to interpret CSV file with semicolon delimiter
+    block AirportsCSVInterpreter oftype CSVInterpreter { 
+        delimiter: ";"; 
+    }
+
+    // Block to write header row to the output table
+    block WriteHeader oftype CellWriter {
+        at: range A1:E1; 
+        write: ["id", "producer", "model", "month", "temperature"];
+    }
+
+    // Block to write header for battery temperature column
+    block WrriteHeaderBat oftype CellWriter {
+        at: cell J1; 
+        write: ["battery_temperature"];
+    }
+
+    // Block to interpret the table structure with specified columns
+    block AirportsTableInterpreter oftype TableInterpreter {
+        header: true;
+        columns: [
+            "id" oftype integer,
+            "producer" oftype text,
+            "model" oftype text,
+            "month" oftype integer,
+            "temperature" oftype decimal,
+            "battery_temperature" oftype decimal,
+        ];
+    }
+
+    // Define a transformation from Celsius to Fahrenheit
+    transform CelsiusToFahrenheit {
+        from Celsius oftype decimal;
+        to Fahrenheit oftype decimal;
+        Fahrenheit: (Celsius * 9/5) + 32;
+    }
+
+    // Block to transform temperature from Celsius to Fahrenheit
+    block CelsiusToFahrenheitTransformerTemp oftype TableTransformer {
+        inputColumns: ['temperature',];
+        outputColumn: 'temperature';
+        use: CelsiusToFahrenheit;
+    }
+
+    // Block to transform battery temperature from Celsius to Fahrenheit
+    block CelsiusToFahrenheitTransformerBat oftype TableTransformer {
+        inputColumns: ['battery_temperature',];
+        outputColumn: 'battery_temperature';
+        use: CelsiusToFahrenheit;
+    }
+
+    // Define a value type with constraints (commented out section included for reference)
+    valuetype IdConstraint oftype text {
+        constraints :[
+            IdCon,
+        ];
+    }
+
+    // Uncommented constraint definition
+    constraint IdCon on text:
+        value matches /NST7-([0-9A-Z])/;
+
+    // Uncommented section for a different constraint (for reference)
+    /*
+    valuetype IdConstraint oftype text {
+        constraints :[
+            GeoConstraint,
+        ];
+    }
+    constraint GeoConstraint on text:
+        value matches /\d{1,3}\.\d{1,}\, \d{1,3}\.\d{1,}/;
+    transform Coordinate {
+        from Old oftype text;
+        to New oftype decimal;
+        New: Old/100;
+    }
+    block CelsiusToFahrenheitTransformer oftype TableTransformer {
+        inputColumns: ['id'];
+        outputColumn: 'id';
+        use: Coordinate;
+    }
+    */
+
+    // Block to load the final data into a SQLite database
+    block DatabaseLoader oftype SQLiteLoader { 
+        table: "temperatures"; 
+        file: "./temperatures.sqlite"; 
+    }
+}
+```
