@@ -1,13 +1,13 @@
-// Define a data processing pipeline named 'Tree'
-pipeline Tree {
+// Define a data processing pipeline named 'Temp'
+pipeline Temp {
     
     // Sequence of operations in the pipeline
-    DataExtractor -> CsvFilePicker -> AirportsTextFileInterpreter -> AirportsCSVInterpreter
-    -> WriteHeader -> WrriteHeaderBat -> AirportsTableInterpreter 
-    -> CelsiusToFahrenheitTransformerTemp -> CelsiusToFahrenheitTransformerBat -> DatabaseLoader;
+    Extractor -> CsvFilePicker -> AirportsTextFileInterpreter -> AirportsCSVInterpreter
+    -> Header -> HeaderBat -> AirportsTableInterpreter 
+    -> CelsiusToFahrenheit -> CelsiusToFahrenheitBat -> DatabaseLoader;
 
     // Data extraction block
-    block DataExtractor oftype GTFSExtractor { 
+    block Extractor oftype GTFSExtractor { 
         url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip"; 
     }
 
@@ -25,12 +25,12 @@ pipeline Tree {
     }
 
     // Header writing blocks
-    block WriteHeader oftype CellWriter { 
+    block Header oftype CellWriter { 
         at: range A1:E1; 
         write: ["id", "producer", "model", "month", "temperature"]; 
     }
 
-    block WrriteHeaderBat oftype CellWriter { 
+    block HeaderBat oftype CellWriter { 
         at: cell J1; 
         write: ["battery_temperature"]; 
     }
@@ -49,13 +49,13 @@ pipeline Tree {
     }
 
     // Temperature transformation blocks
-    block CelsiusToFahrenheitTransformerTemp oftype TableTransformer { 
+    block CelsiusToFahrenheit oftype TableTransformer { 
         inputColumns: ['temperature',]; 
         outputColumn: 'temperature'; 
         use: CelsiusToFahrenheit; 
     }
 
-    block CelsiusToFahrenheitTransformerBat oftype TableTransformer { 
+    block CelsiusToFahrenheitBat oftype TableTransformer { 
         inputColumns: ['battery_temperature',]; 
         outputColumn: 'battery_temperature'; 
         use: CelsiusToFahrenheit; 
