@@ -79,11 +79,7 @@ pipeline Tree {
         constraints: [ IdCon, ]; 
     }
 
-    constraint IdCon on text: 
-        value matches /NST7-([0-9A-Z])/;
-
-    // Uncommented section for reference (optional)
-    /*
+    
     valuetype IdConstraint oftype text {
         constraints: [ GeoConstraint, ]; 
     }
@@ -97,10 +93,5 @@ pipeline Tree {
         New: Old/100; 
     }
 
-    block CoordinateTransformer oftype TableTransformer { 
-        inputColumns: ['id']; 
-        outputColumn: 'id'; 
-        use: Coordinate; 
-    }
-    */
+  
 }
