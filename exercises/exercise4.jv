@@ -1,33 +1,43 @@
-
+// Define a data processing pipeline named 'Tree'
 pipeline Tree {
+    
+    // Sequence of operations in the pipeline
+    DataExtractor -> CsvFilePicker -> AirportsTextFileInterpreter -> AirportsCSVInterpreter
+    -> WriteHeader -> WrriteHeaderBat -> AirportsTableInterpreter 
+    -> CelsiusToFahrenheitTransformerTemp -> CelsiusToFahrenheitTransformerBat -> DatabaseLoader;
 
-    // 1. Data Extraction
+    // Data extraction block
     block DataExtractor oftype GTFSExtractor { 
         url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip"; 
     }
-    
-    // 2. File Handling
-    block CsvFilePicker oftype FilePicker {
-        path: "/data.csv";
+
+    // File picking block
+    block CsvFilePicker oftype FilePicker { 
+        path: "/data.csv"; 
     }
+
+    // Text file interpretation block
     block AirportsTextFileInterpreter oftype TextFileInterpreter {}
+
+    // CSV interpretation block
     block AirportsCSVInterpreter oftype CSVInterpreter { 
         delimiter: ";"; 
     }
 
-    // 3. Writing Headers
-    block WriteHeader oftype CellWriter {
+    // Header writing blocks
+    block WriteHeader oftype CellWriter { 
         at: range A1:E1; 
-        write: ["id", "producer", "model", "month", "temperature"];
-    }
-    block WriteHeaderBat oftype CellWriter {
-        at: cell J1; 
-        write: ["battery_temperature"];
+        write: ["id", "producer", "model", "month", "temperature"]; 
     }
 
-    // 4. Table Interpretation
-    block AirportsTableInterpreter oftype TableInterpreter {
-        header: true;
+    block WrriteHeaderBat oftype CellWriter { 
+        at: cell J1; 
+        write: ["battery_temperature"]; 
+    }
+
+    // Table interpretation block
+    block AirportsTableInterpreter oftype TableInterpreter { 
+        header: true; 
         columns: [
             "id" oftype integer,
             "producer" oftype text,
@@ -35,63 +45,62 @@ pipeline Tree {
             "month" oftype integer,
             "temperature" oftype decimal,
             "battery_temperature" oftype decimal,
-        ];
+        ]; 
     }
 
-    // 5. Transformations
-    transform CelsiusToFahrenheit {
-        from Celsius oftype decimal;
-        to Fahrenheit oftype decimal;
-        Fahrenheit: (Celsius * 9/5) + 32;
-    }
-    block CelsiusToFahrenheitTransformerTemp oftype TableTransformer {
-        inputColumns: ['temperature'];
-        outputColumn: 'temperature';
-        use: CelsiusToFahrenheit;
-    }
-    block CelsiusToFahrenheitTransformerBat oftype TableTransformer {
-        inputColumns: ['battery_temperature'];
-        outputColumn: 'battery_temperature';
-        use: CelsiusToFahrenheit;
+    // Temperature transformation blocks
+    block CelsiusToFahrenheitTransformerTemp oftype TableTransformer { 
+        inputColumns: ['temperature',]; 
+        outputColumn: 'temperature'; 
+        use: CelsiusToFahrenheit; 
     }
 
-    // 6. Database Loading
+    block CelsiusToFahrenheitTransformerBat oftype TableTransformer { 
+        inputColumns: ['battery_temperature',]; 
+        outputColumn: 'battery_temperature'; 
+        use: CelsiusToFahrenheit; 
+    }
+
+    // Database loading block
     block DatabaseLoader oftype SQLiteLoader { 
         table: "temperatures"; 
         file: "./temperatures.sqlite"; 
     }
 
-    // 7. Constraints
-    valuetype IdConstraint oftype text {
-        constraints: [
-            IdCon,
-        ];
+    // Transformation definitions
+    transform CelsiusToFahrenheit { 
+        from Celsius oftype decimal; 
+        to Fahrenheit oftype decimal; 
+        Fahrenheit: (Celsius * 9/5) + 32; 
     }
-    constraint IdCon on text:
+
+    // Value type and constraint definitions
+    valuetype IdConstraint oftype text { 
+        constraints: [ IdCon, ]; 
+    }
+
+    constraint IdCon on text: 
         value matches /NST7-([0-9A-Z])/;
 
+    // Uncommented section for reference (optional)
     /*
     valuetype IdConstraint oftype text {
-        constraints: [
-            GeoConstraint,
-        ];
+        constraints: [ GeoConstraint, ]; 
     }
-    constraint GeoConstraint on text:
-        value matches /\d{1,3}\.\d{1,}, \d{1,3}\.\d{1,}/;
-    transform Coordinate {
-        from Old oftype text;
-        to New oftype decimal;
-        New: Old / 100;
+
+    constraint GeoConstraint on text: 
+        value matches /\d{1,3}\.\d{1,}\, \d{1,3}\.\d{1,}/;
+
+    transform Coordinate { 
+        from Old oftype text; 
+        to New oftype decimal; 
+        New: Old/100; 
     }
-    block CelsiusToFahrenheitTransformer oftype TableTransformer {
-        inputColumns: ['id'];
-        outputColumn: 'id';
-        use: Coordinate;
+
+    block CoordinateTransformer oftype TableTransformer { 
+        inputColumns: ['id']; 
+        outputColumn: 'id'; 
+        use: Coordinate; 
     }
     */
-
-    // Sequence of Operations
-    DataExtractor -> CsvFilePicker -> AirportsTextFileInterpreter -> AirportsCSVInterpreter
-    -> WriteHeader -> WrriteHeaderBat -> AirportsTableInterpreter
-    -> CelsiusToFahrenheitTransformerTemp -> CelsiusToFahrenheitTransformerBat -> DatabaseLoader;
 }
