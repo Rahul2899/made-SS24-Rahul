@@ -1,6 +1,3 @@
-Here's the code with added comments for better understanding:
-
-```plaintext
 // Define a data processing pipeline named 'Tree'
 pipeline Tree {
 
