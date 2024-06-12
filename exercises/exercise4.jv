@@ -1,11 +1,6 @@
-// Define a data processing pipeline named 'Temp'
-pipeline Temp {
-    
-    // Sequence of operations in the pipeline
-    Extractor -> CsvFilePicker -> AirportsTextFileInterpreter -> AirportsCSVInterpreter
-    -> Header -> HeaderBat -> AirportsTableInterpreter 
-    -> CelsiusToFahrenheit -> CelsiusToFahrenheitBat -> DatabaseLoader;
 
+// Define a data processing pipeline named 'Temperature'
+pipeline Temperature {
     // Data extraction block
     block Extractor oftype GTFSExtractor { 
         url: "https://www.mowesta.com/data/measure/mowesta-dataset-20221107.zip"; 
@@ -17,10 +12,10 @@ pipeline Temp {
     }
 
     // Text file interpretation block
-    block AirportsTextFileInterpreter oftype TextFileInterpreter {}
+    block TemperatureText oftype TextFileInterpreter {}
 
     // CSV interpretation block
-    block AirportsCSVInterpreter oftype CSVInterpreter { 
+    block TemperatureCSV oftype CSVInterpreter { 
         delimiter: ";"; 
     }
 
@@ -30,13 +25,13 @@ pipeline Temp {
         write: ["id", "producer", "model", "month", "temperature"]; 
     }
 
-    block HeaderBat oftype CellWriter { 
+    block HeaderBattery oftype CellWriter { 
         at: cell J1; 
         write: ["battery_temperature"]; 
     }
 
     // Table interpretation block
-    block AirportsTableInterpreter oftype TableInterpreter { 
+    block TemperatureTable oftype TableInterpreter { 
         header: true; 
         columns: [
             "id" oftype integer,
@@ -55,7 +50,7 @@ pipeline Temp {
         use: CelsiusToFahrenheit; 
     }
 
-    block CelsiusToFahrenheitBat oftype TableTransformer { 
+    block CelsiusToFahrenheitTemperature oftype TableTransformer { 
         inputColumns: ['battery_temperature',]; 
         outputColumn: 'battery_temperature'; 
         use: CelsiusToFahrenheit; 
@@ -79,19 +74,12 @@ pipeline Temp {
         constraints: [ IdCon, ]; 
     }
 
-    
-    valuetype IdConstraint oftype text {
-        constraints: [ GeoConstraint, ]; 
-    }
+    constraint IdCon on text: 
+        value matches /NST7-([0-9A-Z])/;
 
-    constraint GeoConstraint on text: 
-        value matches /\d{1,3}\.\d{1,}\, \d{1,3}\.\d{1,}/;
-
-    transform Coordinate { 
-        from Old oftype text; 
-        to New oftype decimal; 
-        New: Old/100; 
-    }
-
-  
+// Sequence of operations in the pipeline
+    Extractor -> CsvFilePicker -> TemperatureText -> TemperatureCSV
+    -> Header -> HeaderBattery -> TemperatureTable 
+    -> CelsiusToFahrenheit -> CelsiusToFahrenheitTemperature -> DatabaseLoader;
+   
 }
