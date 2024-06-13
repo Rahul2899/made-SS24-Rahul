@@ -10,7 +10,7 @@ echo "Tests completed."
 # Clean up environment
 echo "Cleaning up test environment..."
 rm -f your_database.db
-rm -f Automated_script.py
+rm -f Automated_test.py
 rm -rf /content/data
 
 echo "Test environment cleaned up."
