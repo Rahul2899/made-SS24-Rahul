@@ -1,0 +1,62 @@
+pipeline GtfsdataPipeline {
+
+    // Extract file from url
+    block GtfsdataExtractor oftype GTFSExtractor {
+    url:"https://gtfs.rhoenenergie-bus.de/GTFS.zip";
+    }
+    
+    // Use a file FilePicker block with a path for an existing file
+    block GtfsdataFilePicker oftype FilePicker {
+        path: "/stops.txt";
+    }
+
+    // maintain german umlauts
+    block GtfsdataTextFileInterpreter oftype TextFileInterpreter {
+        encoding: "utf8";
+    }
+
+    // prepration of the csv file
+    block GtfsdataCsvInterpreter oftype CSVInterpreter {
+        delimiter: ',';
+        enclosingEscape: '"';
+        enclosing: '"'; 
+    }
+
+    // Only Required Columns
+    block GtfsdataTableInterpreter oftype TableInterpreter {
+        header: true;
+        columns: [
+            "stop_id" oftype integer,
+            "stop_name" oftype text,
+            "stop_lat" oftype geocoordinateRange,
+            "stop_lon" oftype geocoordinateRange,
+            "zone_id" oftype Zoneconstratin,
+        ];
+    }
+    // Filter data
+    valuetype Zoneconstratin oftype integer{
+        constraints: [Zoneidconstraint];
+    }
+
+    constraint Zoneidconstraint on integer:
+        value == 1645;
+
+    // Validate data
+    valuetype geocoordinateRange oftype decimal {
+        constraints: [geocoordinate];
+        }
+    
+    constraint geocoordinate oftype RangeConstraint {
+        lowerBound: -90;
+        lowerBoundInclusive: true;
+        upperBound: 90;
+        upperBoundInclusive: true;
+        }
+
+    // save data
+    block GtfsdataLoader oftype SQLiteLoader {
+        table: "stops";
+        file: "gtfs.sqlite";
+    }
+    GtfsdataExtractor-> GtfsdataFilePicker -> GtfsdataTextFileInterpreter -> GtfsdataCsvInterpreter -> GtfsdataTableInterpreter -> GtfsdataLoader;
+}
