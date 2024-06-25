@@ -134,8 +134,8 @@ def test_kaggle_credentials():
 
 # Test to check Kaggle dataset URLs
 @pytest.mark.parametrize("dataset_id", [
-    "atharvaingle/crop-recommendation-dataset",
-    "ankurzing/crop-production"
+    "varshitanalluri/crop-recommendation-dataset",
+    "thedevastator/crop-production"
 ])
 def test_kaggle_dataset_exists(dataset_id):
     try:
