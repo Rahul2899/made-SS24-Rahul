@@ -1,3 +1,8 @@
 #!/bin/bash
-pip3 install kaggle
-python3 ./datapipeline.py
+
+cd project
+# Installing the required libraries
+python -m pip install --upgrade pip
+pip install -r ../requirements.txt
+
+python datapipeline.py
