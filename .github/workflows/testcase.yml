@@ -1,0 +1,52 @@
+
+name: Project Tests
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - project/**
+    
+jobs:
+  project_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Jayvee Installation
+        uses: actions/checkout@v3
+        with:
+          repository: jvalue/made-exercise-feedback
+          path: installation
+
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: "lts/*"
+
+      # Install jayvee
+      - name: Set up Jayvee
+        run: |
+          ./installation/ci/setup_jayvee.sh
+
+      # Install python
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+       
+    
+      - name: Checkout project Repo
+        uses: actions/checkout@v3
+        with:
+          repository: Rahul2899/made-SS24-Rahul
+          path: app
+
+      - name : Running Pipeline
+        working-directory: ./app/project
+        run: bash ./datapipeline.sh
+
+      - name : Starting Test
+        working-directory: ./app/project
+        run: |
+         bash ./Automated_test.sh
+    
+      
