@@ -1,13 +1,5 @@
-#!/bin/bash
+echo "Running Tests"
 
-# Removing Existing Files
-echo "Starting Tests"
-echo "Installing pre-requisite libraries"
-pip install pandas pysqlite3
-
-echo "------------------------"
-
-echo "Running system tests."
 python ./Automated_test.py
 
 # Check the return value of the test script

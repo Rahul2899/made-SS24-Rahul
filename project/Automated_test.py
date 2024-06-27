@@ -1,19 +1,25 @@
 import os
 import unittest
 
-def check_files(folder, files):
-    results = {}
-    for filename in files:
-        file_path = os.path.join(folder, filename)
-        results[filename] = os.path.isfile(file_path)
-    return results
+def is_file_exist(folder, file):
+    res = False
+    file_path = os.path.join(folder, file)
+    if os.path.isfile(file_path):
+        return True
+    
+    return False
+    
+
+
+
 class Automated_Test(unittest.TestCase):
     def setUp(self):
-        self.dir = "./data/"
-    def test_file_existance(self):
-        expected_result = {'combined_crop_rainfall.sqlite': True}
-        result = check_files(self.dir, ['combined_crop_rainfall.sqlite'])
-        self.assertEqual(result, expected_result)
+        self.folder = "../data/"
+
+    def test_db_created(self):
+        expected_result = True
+        result = is_file_exist(self.folder, 'combined_crop_rainfall.sqlite')
+        self.assertEqual(result, expected_result,"Db Filename should be 'combined_crop_rainfall.sqlite'")
 
 
 if __name__ == "__main__":
