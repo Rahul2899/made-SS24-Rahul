@@ -1,8 +1,7 @@
 #!/bin/bash
 
-cd project
-# Installing the required libraries
-python -m pip install --upgrade pip
-pip install -r ../requirements.txt
+# Install necessary Python packages
+pip install kaggle requests  pandas  pysqlite3  matplotlib seaborn scikit-learn 
 
+# Run the Python script
 python datapipeline.py
