@@ -1,4 +1,5 @@
-name: Project Tests
+name: Project Test
+
 on:
   push:
     branches:
@@ -7,22 +8,18 @@ on:
       - project/**
 
 jobs:
-  project_test:
+  exercise-feedback:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v3
-
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v4
         with:
-          python-version: 3.11
-    
-      - name: Install dependencies
-        run: pip install kaggle requests pandas pysqlite3 matplotlib seaborn scikit-learn
+          path: app
 
-      - name: Run Data Pipeline
-        run: bash project/datapipeline.sh
+      - name : Starting Pipeline
+        working-directory: ./app/project
+        run : bash datapipeline.sh
 
-      - name: Run Automated Tests
-        run: bash project/Automated_test.sh
+      - name : Starting Test
+        working-directory: ./app/project
+        run : bash Automated_test.sh
