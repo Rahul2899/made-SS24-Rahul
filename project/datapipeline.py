@@ -1,11 +1,6 @@
 import os
 import pandas as pd
 import sqlite3
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score
 import kaggle
 import zipfile
 import shutil
@@ -59,71 +54,9 @@ def load_combined_data(db_path):
     conn.close()
     return df
 
-def descriptive_statistics(df):
-    """Generate descriptive statistics for the dataset."""
-    print("\nDescriptive Statistics:")
-    print(df.describe())
-
-def correlation_analysis(df):
-    """Perform correlation analysis."""
-    numeric_df = df.select_dtypes(include=[float, int])
-    print("\nNumeric Columns for Correlation Matrix:", numeric_df.columns)
-    
-    print("\nCorrelation Matrix:")
-    correlation_matrix = numeric_df.corr()
-    print(correlation_matrix)
-
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
-    plt.title("Correlation Matrix")
-    plt.show()
-
-def data_visualization(df):
-    """Visualize data."""
-    plt.figure(figsize=(10, 6))
-    sns.histplot(df['crop'], kde=True)
-    plt.title("Distribution of Crop Production")
-    plt.xlabel("Crop Production")
-    plt.ylabel("Frequency")
-    plt.show()
-
-    plt.figure(figsize=(10, 6))
-    sns.scatterplot(x='rainfall', y='crop', data=df)
-    plt.title("Crop Production vs Rainfall")
-    plt.xlabel("Rainfall")
-    plt.ylabel("Crop Production")
-    plt.show()
-
-def predictive_analysis(df):
-    """Perform predictive analysis."""
-    X = df[['rainfall']]
-    y = df['crop']
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-
-    y_pred = model.predict(X_test)
-
-    mse = mean_squared_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
-
-    print(f"\nPredictive Analysis:")
-    print(f"Mean Squared Error: {mse}")
-    print(f"R-squared: {r2}")
-
-    plt.figure(figsize=(10, 6))
-    plt.scatter(X_test, y_test, color='blue', label='Actual')
-    plt.plot(X_test, y_pred, color='red', linewidth=2, label='Predicted')
-    plt.title("Crop Production vs Rainfall - Regression Line")
-    plt.xlabel("Rainfall")
-    plt.ylabel("Crop Production")
-    plt.legend()
-    plt.show()
 
 def main_advanced():
-    data_dir = './data'
+    data_dir = '../data/'
     combined_db_path = os.path.join(data_dir, 'combined_crop_rainfall.sqlite')
 
     # Create necessary directories
@@ -143,17 +76,6 @@ def main_advanced():
 
     # Remove downloads directory after processing
     shutil.rmtree(downloads_dir)
-
-    # Load combined data from the SQLite database
-    df_combined = load_combined_data(combined_db_path)
-
-    if df_combined is not None:
-        descriptive_statistics(df_combined)
-        correlation_analysis(df_combined)
-        data_visualization(df_combined)
-        predictive_analysis(df_combined)
-    else:
-        print("Error: Failed to load combined dataset")
 
 if __name__ == "__main__":
     main_advanced()
