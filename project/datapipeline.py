@@ -6,8 +6,8 @@ import zipfile
 import shutil
 import json
 
-os.environ['KAGGLE_USERNAME'] = 'rahulnitinramraje' 
-os.environ['KAGGLE_KEY'] = 'aa1f265dc17c2b5b74f6742e50ce25cb' 
+os.environ['KAGGLE_USERNAME'] = 'raju007420' 
+os.environ['KAGGLE_KEY'] = '4e25008fe0b8a8359166d90199576aef' 
    
 
 def kaggle_download(dataset_links, download_path):
