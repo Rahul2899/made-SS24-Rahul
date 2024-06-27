@@ -8,16 +8,8 @@ import json
 
 # Ensure kaggle.json is in the correct location
 def setup_kaggle_api():
-    #kaggle_dir = os.path.expanduser("~/.kaggle")
-    kaggle_json_path = ("kaggle.json")
-    
-    #if not os.path.exists(kaggle_dir):
-        #os.makedirs(kaggle_dir)
-    
-    if not os.path.exists(kaggle_json_path):
-        raise FileNotFoundError("kaggle.json file not found in ~/.kaggle. Please place the file there.")
-    
-    os.chmod(kaggle_json_path, 0o600)  # Set appropriate permissions
+    os.environ['KAGGLE_USERNAME'] = 'rahulnitinramraje' 
+    os.environ['KAGGLE_KEY'] = '17a3870be72972c6cd4621b93877c0cf' 
 
 def kaggle_download(dataset_links, download_path):
     """Download datasets from Kaggle."""
