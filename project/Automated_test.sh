@@ -1,4 +1,4 @@
-echo "Running Tests"
+echo "Running Tests.."
 
 python ./Automated_test.py
 
