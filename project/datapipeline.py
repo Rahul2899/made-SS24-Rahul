@@ -5,15 +5,14 @@ import kaggle
 import zipfile
 import shutil
 import json
-
-# Ensure kaggle.json is in the correct location
-def setup_kaggle_api():
-    os.environ['KAGGLE_USERNAME'] = 'rahulnitinramraje' 
-    os.environ['KAGGLE_KEY'] = '17a3870be72972c6cd4621b93877c0cf' 
+   
 
 def kaggle_download(dataset_links, download_path):
     """Download datasets from Kaggle."""
-    setup_kaggle_api()  # Ensure API is set up before downloading
+    
+    os.environ['KAGGLE_USERNAME'] = 'rahulnitinramraje' 
+    os.environ['KAGGLE_KEY'] = '17a3870be72972c6cd4621b93877c0cf' 
+    
     for dataset in dataset_links:
         try:
             dataset_id = '/'.join(dataset.split('/')[-2:])
