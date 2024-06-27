@@ -1,137 +1,159 @@
 import os
 import pandas as pd
 import sqlite3
-import kaggle
-import tempfile
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+import kaggle
+import zipfile
+import shutil
+import json
 
-# Set up Kaggle API credentials from environment variables
-def setup_kaggle():
-    os.environ['KAGGLE_USERNAME'] = os.getenv('KAGGLE_USERNAME')
-    os.environ['KAGGLE_KEY'] = os.getenv('KAGGLE_KEY')
+# Ensure kaggle.json is in the correct location
+def setup_kaggle_api():
+    #kaggle_dir = os.path.expanduser("~/.kaggle")
+    kaggle_json_path = ("kaggle.json")
+    
+    #if not os.path.exists(kaggle_dir):
+        #os.makedirs(kaggle_dir)
+    
+    if not os.path.exists(kaggle_json_path):
+        raise FileNotFoundError("kaggle.json file not found in ~/.kaggle. Please place the file there.")
+    
+    os.chmod(kaggle_json_path, 0o600)  # Set appropriate permissions
 
-# Download and extract a Kaggle dataset into a specified temporary folder
-def download_and_extract_dataset(dataset_id, temp_dir):
-    try:
-        kaggle.api.dataset_download_files(dataset_id, path=temp_dir, unzip=True)
-        print(f'Dataset downloaded and extracted to {temp_dir}')
-    except Exception as e:
-        print(f"Error downloading and extracting dataset {dataset_id}: {e}")
-        return False
-    return True
+def kaggle_download(dataset_links, download_path):
+    """Download datasets from Kaggle."""
+    setup_kaggle_api()  # Ensure API is set up before downloading
+    for dataset in dataset_links:
+        try:
+            dataset_id = '/'.join(dataset.split('/')[-2:])
+            kaggle.api.dataset_download_files(dataset_id, path=download_path, unzip=True)
+            print(f"Downloaded and extracted {dataset_id} to {download_path}")
+        except Exception as e:
+            print(f"Error downloading {dataset_id}: {e}")
 
-# Process Crop Recommendation data
-def process_crop_recommendation_data(temp_dir):
-    try:
-        csv_filename = os.path.join(temp_dir, 'Crop_Recommendation.csv')
-        df = pd.read_csv(csv_filename)
+def csv_to_sqlite(csv_directory, sqlite_db_path):
+    """Convert CSV files in a directory to a SQLite database."""
+    conn = sqlite3.connect(sqlite_db_path)
+    cursor = conn.cursor()
+    
+    for filename in os.listdir(csv_directory):
+        if filename.endswith(".csv"):
+            file_path = os.path.join(csv_directory, filename)
+            table_name = os.path.splitext(filename)[0]
+            df = pd.read_csv(file_path)
+            df.to_sql(table_name, conn, if_exists='replace', index=False)
+            print(f"Table '{table_name}' created/updated from file '{filename}'")
+    
+    conn.commit()
+    conn.close()
+    print(f"All CSV files have been imported into '{sqlite_db_path}'")
 
-        # Keep only the specified columns
-        df = df[['Nitrogen', 'Temperature', 'Rainfall']]
+def load_combined_data(db_path):
+    """Load combined data from SQLite."""
+    conn = sqlite3.connect(db_path)
+    df = pd.read_sql('SELECT * FROM combined_data', conn)
+    conn.close()
+    return df
 
-        # Remove rows with null values in any column
-        df.dropna(inplace=True)
+def descriptive_statistics(df):
+    """Generate descriptive statistics for the dataset."""
+    print("\nDescriptive Statistics:")
+    print(df.describe())
 
-        # Sample 500 rows
-        df_sampled = df.sample(n=500, random_state=1)
-        print(f"Crop Recommendation Dataset - Sampled Rows: {len(df_sampled)}")
-        return df_sampled
-    except Exception as e:
-        print(f"Error processing crop recommendation data: {e}")
-        return None
+def correlation_analysis(df):
+    """Perform correlation analysis."""
+    numeric_df = df.select_dtypes(include=[float, int])
+    print("\nNumeric Columns for Correlation Matrix:", numeric_df.columns)
+    
+    print("\nCorrelation Matrix:")
+    correlation_matrix = numeric_df.corr()
+    print(correlation_matrix)
 
-# Process Crop Production data
-def process_crop_production_data(temp_dir):
-    try:
-        csv_filename = os.path.join(temp_dir, 'crop_production.csv')
-        df = pd.read_csv(csv_filename)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+    plt.title("Correlation Matrix")
+    plt.show()
 
-        # Keep only the specified columns and rename them
-        df = df[['LOCATION', 'SUBJECT', 'TIME', 'Value']]
-        df.rename(columns={'SUBJECT': 'Crop', 'TIME': 'Year'}, inplace=True)
+def data_visualization(df):
+    """Visualize data."""
+    plt.figure(figsize=(10, 6))
+    sns.histplot(df['crop'], kde=True)
+    plt.title("Distribution of Crop Production")
+    plt.xlabel("Crop Production")
+    plt.ylabel("Frequency")
+    plt.show()
 
-        # Remove rows with null values in any column
-        df.dropna(inplace=True)
+    plt.figure(figsize=(10, 6))
+    sns.scatterplot(x='rainfall', y='crop', data=df)
+    plt.title("Crop Production vs Rainfall")
+    plt.xlabel("Rainfall")
+    plt.ylabel("Crop Production")
+    plt.show()
 
-        # Sample 500 rows
-        df_sampled = df.sample(n=500, random_state=1)
-        print(f"Crop Production Dataset - Sampled Rows: {len(df_sampled)}")
-        return df_sampled
-    except Exception as e:
-        print(f"Error processing crop production data: {e}")
-        return None
+def predictive_analysis(df):
+    """Perform predictive analysis."""
+    X = df[['rainfall']]
+    y = df['crop']
 
-# Merge two datasets on the 'Year' column
-def merge_datasets(df1, df2):
-    try:
-        # Assign random years from df2 to df1 for merging
-        df1['Year'] = np.random.choice(df2['Year'], size=len(df1))
-        merged_df = pd.merge(df1, df2, on='Year')
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        # Remove rows with null values in any column in the merged dataset
-        merged_df.dropna(inplace=True)
+    model = LinearRegression()
+    model.fit(X_train, y_train)
 
-        print(f"Merged Dataset - Rows: {len(merged_df)}")
-        return merged_df
-    except Exception as e:
-        print(f"Error merging datasets: {e}")
-        return None
+    y_pred = model.predict(X_test)
 
-# Analyze the merged data by creating scatter plots
-def analyze_data(df):
-    try:
-        plt.figure(figsize=(10, 6))
-        sns.scatterplot(x='Rainfall', y='Value', data=df)
-        plt.title('Relationship between Rainfall and Crop Production Value')
-        plt.xlabel('Rainfall (mm)')
-        plt.ylabel('Crop Production Value')
-        plt.show()
+    mse = mean_squared_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
 
-        plt.figure(figsize=(10, 6))
-        sns.scatterplot(x='Temperature', y='Value', data=df)
-        plt.title('Relationship between Temperature and Crop Production Value')
-        plt.xlabel('Temperature (°C)')
-        plt.ylabel('Crop Production Value')
-        plt.show()
-    except Exception as e:
-        print(f"Error analyzing data: {e}")
+    print(f"\nPredictive Analysis:")
+    print(f"Mean Squared Error: {mse}")
+    print(f"R-squared: {r2}")
 
-def main():
-    setup_kaggle()  
+    plt.figure(figsize=(10, 6))
+    plt.scatter(X_test, y_test, color='blue', label='Actual')
+    plt.plot(X_test, y_pred, color='red', linewidth=2, label='Predicted')
+    plt.title("Crop Production vs Rainfall - Regression Line")
+    plt.xlabel("Rainfall")
+    plt.ylabel("Crop Production")
+    plt.legend()
+    plt.show()
 
+def main_advanced():
     data_dir = './data'
-    if not os.path.exists(data_dir):
-        os.makedirs(data_dir)
-        
-    dataset1_id = 'varshitanalluri/crop-recommendation-dataset'
-    dataset2_id = 'thedevastator/crop-production'
+    combined_db_path = os.path.join(data_dir, 'combined_crop_rainfall.sqlite')
 
-    with tempfile.TemporaryDirectory() as temp_dir1, tempfile.TemporaryDirectory() as temp_dir2:
-        if not download_and_extract_dataset(dataset1_id, temp_dir1):
-            print(f"Failed to download dataset {dataset1_id}")
-            return
-        if not download_and_extract_dataset(dataset2_id, temp_dir2):
-            print(f"Failed to download dataset {dataset2_id}")
-            return
+    # Create necessary directories
+    os.makedirs(data_dir, exist_ok=True)
+    downloads_dir = os.path.join(data_dir, 'downloads')
+    os.makedirs(downloads_dir, exist_ok=True)
 
-        df_crop_recommendation = process_crop_recommendation_data(temp_dir1)
-        df_crop_production = process_crop_production_data(temp_dir2)
+    # Download datasets from Kaggle
+    kaggle_datasets = [
+        "https://www.kaggle.com/datasets/thedevastator/the-relationship-between-crop-production-and-cli",
+        "https://www.kaggle.com/datasets/aksahaha/rainfall-india"
+    ]
+    kaggle_download(kaggle_datasets, downloads_dir)
 
-        if df_crop_recommendation is not None and df_crop_production is not None:
-            merged_df = merge_datasets(df_crop_recommendation, df_crop_production)
-            if merged_df is not None:
-                # Save the combined dataset to CSV
-                combined_path = os.path.join(data_dir, 'Combined_Crop_Data.csv')
-                merged_df.to_csv(combined_path, index=False)
-                print(f"Combined data saved to {combined_path}")
-                
-                analyze_data(merged_df)
-            else:
-                print("Error: Failed to merge datasets")
-        else:
-            print("Error: Failed to process one or more datasets")
+    # Convert CSV files to SQLite database
+    csv_to_sqlite(downloads_dir, combined_db_path)
+
+    # Remove downloads directory after processing
+    shutil.rmtree(downloads_dir)
+
+    # Load combined data from the SQLite database
+    df_combined = load_combined_data(combined_db_path)
+
+    if df_combined is not None:
+        descriptive_statistics(df_combined)
+        correlation_analysis(df_combined)
+        data_visualization(df_combined)
+        predictive_analysis(df_combined)
+    else:
+        print("Error: Failed to load combined dataset")
 
 if __name__ == "__main__":
-    main()
+    main_advanced()
