@@ -15,12 +15,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           path: app
+
       - name: Add Kaggle API credentials
-      
-      run: |
-        mkdir -p ~/.kaggle
-        echo "${{ secrets.KAGGLE_JSON }}" > ~/.kaggle/kaggle.json
-        chmod 600 ~/.kaggle/kaggle.json 
+        run: |
+          mkdir -p ~/.kaggle
+          echo "${{ secrets.KAGGLE_JSON }}" > ~/.kaggle/kaggle.json
+          chmod 600 ~/.kaggle/kaggle.json 
 
       - name : Starting Pipeline
         working-directory: ./app/project
